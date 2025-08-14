@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,107 +8,190 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(USER)
-  isActive  Boolean  @default(true)
-  permissions Json?   // Permission object for granular access control
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  password           String
+  role               Role                @default(USER)
+  isActive           Boolean             @default(true)
+  permissions        Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  auditLogs          AuditLog[]
+  loginHistory       LoginHistory[]
   maintenanceRecords MaintenanceRecord[]
-  auditLogs AuditLog[]
-  userActivities UserActivity[]
-  loginHistory LoginHistory[]
-  
+  userActivities     UserActivity[]
+
   @@map("users")
 }
 
 model Mechanic {
-  id        String   @id @default(cuid())
-  name      String
-  email     String?  // Optional contact email
-  phone     String?  // Optional contact phone
-  specialty String?  // Optional specialty (e.g., "Engine Specialist", "Electrician")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  id                 String              @id @default(cuid())
+  name               String
+  email              String?
+  phone              String?
+  specialty          String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   maintenanceRecords MaintenanceRecord[]
-  
+
   @@map("mechanics")
 }
 
 model Truck {
-  id        String   @id @default(cuid())
-  vin       String   @unique
-  make      String
-  model     String
-  year      Int
-  licensePlate String
-  currentMileage Int
-  status    TruckStatus @default(ACTIVE)
-  image     String?  // URL to truck image
-  documents Json?   // Array of uploaded documents
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  id                 String              @id @default(cuid())
+  vin                String              @unique
+  make               String
+  model              String
+  year               Int
+  licensePlate       String
+  currentMileage     Int
+  status             TruckStatus         @default(ACTIVE)
+  image              String?
+  documents          Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   maintenanceRecords MaintenanceRecord[]
-  notifications Notification[]
-  
+  notifications      Notification[]
+
   @@map("trucks")
 }
 
 model MaintenanceJob {
-  id          String   @id @default(cuid())
-  name        String
-  category    String
-  parts       String?  // Common parts involved
-  notes       String?  // Notes / Frequency
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
+  id                 String              @id @default(cuid())
+  name               String
+  category           String
+  parts              String?
+  notes              String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   maintenanceRecords MaintenanceRecord[]
-  
+
   @@map("maintenance_jobs")
 }
 
 model MaintenanceRecord {
-  id             String   @id @default(cuid())
-  truckId        String
-  serviceType    String
-  description    String?
-  datePerformed  DateTime
-  partsCost      Float    @default(0)
-  laborCost      Float    @default(0)
-  totalCost      Float    @default(0)
-  mechanicId     String?
-  nextServiceDue DateTime?
-  status         MaintenanceStatus @default(COMPLETED)
-  notes          String?
-  attachments    Json?   // Array of uploaded files
-  isOilChange    Boolean  @default(false)
-  oilChangeInterval Int?   // Oil change interval in kilometers
-  currentMileage Int?      // Current mileage at time of service
-  maintenanceJobId String?  // Reference to predefined maintenance job
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String            @id @default(cuid())
+  truckId           String
+  serviceType       String
+  description       String?
+  datePerformed     DateTime
+  partsCost         Float             @default(0)
+  laborCost         Float             @default(0)
+  totalCost         Float             @default(0)
+  mechanicId        String?
+  nextServiceDue    DateTime?
+  status            MaintenanceStatus @default(COMPLETED)
+  notes             String?
+  attachments       Json?
+  isOilChange       Boolean           @default(false)
+  oilChangeInterval Int?
+  currentMileage    Int?
+  maintenanceJobId  String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  createdById       String?
+  createdBy         User?             @relation(fields: [createdById], references: [id])
+  maintenanceJob    MaintenanceJob?   @relation(fields: [maintenanceJobId], references: [id])
+  mechanic          Mechanic?         @relation(fields: [mechanicId], references: [id])
+  truck             Truck             @relation(fields: [truckId], references: [id], onDelete: Cascade)
 
-  // Relations
-  truck    Truck    @relation(fields: [truckId], references: [id], onDelete: Cascade)
-  mechanic Mechanic? @relation(fields: [mechanicId], references: [id])
-  createdBy User?    @relation(fields: [createdById], references: [id])
-  createdById String?
-  maintenanceJob MaintenanceJob? @relation(fields: [maintenanceJobId], references: [id])
-  
   @@map("maintenance_records")
+}
+
+model Settings {
+  id                   String   @id @default(cuid())
+  currencySymbol       String   @default("﷼")
+  currencyCode         String   @default("SAR")
+  currencyName         String   @default("Saudi Riyal")
+  decimalPlaces        Int      @default(2)
+  thousandsSeparator   String   @default(",")
+  decimalSeparator     String   @default(".")
+  symbolPosition       String   @default("before")
+  companyName          String?
+  companyAddress       String?
+  companyPhone         String?
+  companyEmail         String?
+  timezone             String   @default("Asia/Riyadh")
+  dateFormat           String   @default("DD/MM/YYYY")
+  maintenanceIntervals Json?
+  notifications        Json?
+  rolePermissions      Json?
+  userPermissions      Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String
+  title     String
+  message   String
+  truckId   String?
+  userId    String?
+  metadata  Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  truck     Truck?   @relation(fields: [truckId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String
+  userId     String
+  userName   String?
+  userEmail  String?
+  userRole   String?
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model UserActivity {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String?
+  entityName String?
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activities")
+}
+
+model LoginHistory {
+  id              String    @id @default(cuid())
+  userId          String
+  loginTime       DateTime
+  logoutTime      DateTime?
+  ipAddress       String?
+  userAgent       String?
+  sessionDuration Int?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("login_history")
 }
 
 enum Role {
@@ -134,105 +211,4 @@ enum MaintenanceStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
-}
-
-model Settings {
-  id              String   @id @default(cuid())
-  currencySymbol  String   @default("﷼")
-  currencyCode    String   @default("SAR")
-  currencyName    String   @default("Saudi Riyal")
-  decimalPlaces   Int      @default(2)
-  thousandsSeparator String @default(",")
-  decimalSeparator String @default(".")
-  symbolPosition  String   @default("before") // "before" or "after"
-  companyName     String?
-  companyAddress  String?
-  companyPhone    String?
-  companyEmail    String?
-  timezone        String   @default("Asia/Riyadh")
-  dateFormat      String   @default("DD/MM/YYYY")
-  maintenanceIntervals Json? // JSON object for different maintenance intervals
-  notifications   Json?    // JSON object for notification settings
-  rolePermissions Json?    // JSON object for role-based permissions
-  userPermissions Json?    // JSON object for user-specific permissions
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  @@map("settings")
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  type      String   // 'oil_change', 'upcoming_maintenance', 'overdue', etc.
-  title     String
-  message   String
-  truckId   String?
-  userId    String?
-  metadata  Json?    // Additional data like dates, intervals, etc.
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  truck Truck? @relation(fields: [truckId], references: [id], onDelete: Cascade)
-  
-  @@map("notifications")
-}
-
-model AuditLog {
-  id          String   @id @default(cuid())
-  action      String   // 'CREATE', 'UPDATE', 'DELETE'
-  entityType  String   // 'User', 'Truck', 'MaintenanceRecord', 'Mechanic', 'MaintenanceJob'
-  entityId    String   // ID of the entity that was modified
-  userId      String   // User who performed the action
-  userName    String?  // Name of the user who performed the action
-  userEmail   String?  // Email of the user who performed the action
-  userRole    String?  // Role of the user who performed the action
-  changes     Json?    // JSON object containing before/after values
-  ipAddress   String?  // IP address of the user
-  userAgent   String?  // User agent string
-  createdAt   DateTime @default(now())
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id])
-  
-  @@map("audit_logs")
-}
-
-model UserActivity {
-  id          String   @id @default(cuid())
-  userId      String
-  action      String   // 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'VIEW', etc.
-  entityType  String   // 'TRUCK', 'MAINTENANCE_RECORD', 'USER', 'SETTINGS', etc.
-  entityId    String?  // ID of the entity being acted upon
-  entityName  String?  // Name/description of the entity for easier identification
-  oldValues   Json?    // Previous values before update/delete
-  newValues   Json?    // New values after create/update
-  ipAddress   String?  // User's IP address
-  userAgent   String?  // Browser/device information
-  metadata    Json?    // Additional context information
-  createdAt   DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("user_activities")
-}
-
-model LoginHistory {
-  id          String   @id @default(cuid())
-  userId      String
-  loginTime   DateTime
-  logoutTime  DateTime?
-  ipAddress   String?
-  userAgent   String?
-  sessionDuration Int? // Duration in seconds
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("login_history")
 }
